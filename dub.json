@@ -25,10 +25,9 @@
         {
             "name": "unittest",
             "dependencies": {
-                "fluent-asserts": "~>0.12.4",
                 "vibe-d:tls": "*"
             },
-            "versions": ["PrometheusUnittest"],
+            "versions": ["PrometheusUnittest"]
         }
     ]
 }

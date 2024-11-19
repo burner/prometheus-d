@@ -6,19 +6,20 @@
 
 module prometheus.histogram;
 
+import std.algorithm.comparison : equal;
+import std.conv : to;
 import std.exception : enforce;
-import std.string : empty;
+import std.math : pow;
+import std.range : empty;
 
 import prometheus.metric;
-
-
-version(PrometheusUnittest)
-    import fluent.asserts;
+import prometheus.encoding;
 
 @safe:
 
 class Histogram : Metric
 {
+@safe:
     private double[] bucketValues;
     private HistogramBucket[string[]] buckets;
 
@@ -56,16 +57,17 @@ unittest
 {
     auto h = new Histogram("test", "testing description", null, Buckets.linear(0, 1, 5));
 
-    h.observe(-1).should.not.throwAnyException;
-    h.observe( 0).should.not.throwAnyException;
-    h.observe( 1).should.not.throwAnyException;
-    h.observe( 2).should.not.throwAnyException;
-    h.observe( 3).should.not.throwAnyException;
-    h.observe( 4).should.not.throwAnyException;
-    h.observe( 5).should.not.throwAnyException;
-    h.observe( 6).should.not.throwAnyException;
+	// should not throw
+    h.observe(-1);
+    h.observe( 0);
+    h.observe( 1);
+    h.observe( 2);
+    h.observe( 3);
+    h.observe( 4);
+    h.observe( 5);
+    h.observe( 6);
 
-    h.collect.encode.should.not.throwAnyException;
+    h.collect.encode();
 }
 
 //test lifecycle w/ labels
@@ -75,15 +77,16 @@ unittest
 
     foreach(verb; ["get", "set"]) {
         for(int i = -1; i < 5; i++) {
-            h.observe(i, [verb]).should.not.throwAnyException;
+            h.observe(i, [verb]);
 		}
 	}
 
-    h.collect.encode.should.not.throwAnyException;
+    h.collect.encode();
 }
 
 struct HistogramBucket
 {
+@safe:
     private Histogram parent;
     private double[] values;
     private double sum;
@@ -124,6 +127,7 @@ struct HistogramBucket
 
 final class Buckets
 {
+@safe:
     static double[] linear(double start, double width, long count)
     {
         double[] ret = new double[count-1];
@@ -136,8 +140,6 @@ final class Buckets
 
     static double[] exponential(double start, double factor, long count)
     {
-        import std.math : pow;
-
         double[] ret = new double[count-1];
         for(int i = 0; i < count - 1; i++)
         {
@@ -150,26 +152,24 @@ final class Buckets
 //test linear
 unittest
 {
-    auto lin1 = Buckets.linear(0, 1, 4);
-    lin1.length.should.equal(3);
-    lin1[0].should.equal(0);
-    lin1[1].should.equal(1);
-    lin1[2].should.equal(2);
+	{
+		auto lin1 = Buckets.linear(0, 1, 4);
+		assert(lin1.length == 3, to!(string)(lin1.length));
+		assert(equal(lin1[], [0, 1, 2]));
+	}
 
-    auto lin2 = Buckets.linear(-1, 1, 5);
-    lin2.length.should.equal(4);
-    lin2[0].should.equal(-1);
-    lin2[1].should.equal(0);
-    lin2[2].should.equal(1);
-    lin2[3].should.equal(2);
+	{
+		auto lin2 = Buckets.linear(-1, 1, 5);
+		assert(lin2.length == 4, to!(string)(lin2.length));
+		assert(equal(lin2[], [-1, 0, 1, 2]));
+	}
 }
 
 //test exponential
 
 private class HistogramSnapshot : MetricSnapshot
 {
-    import prometheus.encoding;
-
+@safe:
     string name;
     string help;
     string[] labels;
@@ -190,7 +190,7 @@ private class HistogramSnapshot : MetricSnapshot
         this.timestamp = Metric.posixTime;
     }
 
-    override immutable(ubyte[]) encode(EncodingFormat fmt = EncodingFormat.text)
+    override string encode(EncodingFormat fmt = EncodingFormat.text)
     {
         string output = "";
 
@@ -204,7 +204,7 @@ private class HistogramSnapshot : MetricSnapshot
             this.writeBucket(output, labelValues, value);
 		}
 
-        return cast(immutable ubyte[])output;
+        return output;
     }
 
     private void writeBucket(ref string output, const ref string[] labelValues, const ref HistogramBucket bucket)

@@ -5,12 +5,11 @@ import std.concurrency : initOnce;
 
 import prometheus.metric;
 
-version (unittest) import fluent.asserts;
-
 @safe:
 
 class Registry
 {
+@safe:
     private __gshared Registry instance;
 
     static Registry global() @system
@@ -56,7 +55,7 @@ class Registry
     auto registry = UnderTest.global;
 
     // then
-    registry.should.not.equal(null);
+	assert(registry !is null);
 }
 
 @system unittest
@@ -69,5 +68,5 @@ class Registry
     auto registry2 = UnderTest.global;
 
     // then
-    registry2.should.equal(registry1);
+	assert(registry1 is registry2);
 }

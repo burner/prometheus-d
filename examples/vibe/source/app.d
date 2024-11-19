@@ -44,7 +44,7 @@ void main()
         c.inc;
     });
     router.get("/", (HTTPServerRequest req, HTTPServerResponse res) {
-        res.writeBody(cast(ubyte[])"hello, world!", "text/plain");
+        res.writeBody("hello, world!");
     });
     router.get("/metrics", handleMetrics(Registry.global));
 

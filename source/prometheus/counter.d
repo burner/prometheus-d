@@ -14,14 +14,13 @@ import std.exception : enforce;
 import std.math : fmax;
 import std.stdio : writeln;
 import std.range : empty;
-
-version(PrometheusUnittest)
-    import fluent.asserts;
+import std.string : indexOf;
 
 @safe:
 
 class Counter : Metric
 {
+@safe:
     private double[string[]] values;
 
     this(string name, string help, string[] labels)
@@ -69,6 +68,7 @@ unittest
 
 private class CounterSnapshot : MetricSnapshot
 {
+@safe:
     string name;
     string help;
     string[] labels;
@@ -86,7 +86,7 @@ private class CounterSnapshot : MetricSnapshot
         this.timestamp = Metric.posixTime;
     }
 
-    override immutable(ubyte[]) encode(EncodingFormat fmt = EncodingFormat.text)
+    override string encode(EncodingFormat fmt = EncodingFormat.text)
     {
         enforce(fmt == EncodingFormat.text, "Unsupported encoding type");
 
@@ -107,20 +107,25 @@ private class CounterSnapshot : MetricSnapshot
                 this.timestamp);
 		}
 
-        return cast(immutable ubyte[])output;
+        return output;
     }
 }
 
 unittest
 {
     Counter c = new Counter("test", "counter w/ no labels", []);
-    c.inc().should.not.throwAnyException;
 }
 
 unittest
 {
-    Counter c = new Counter("test", "counter w/ a label", ["domain"]);
-    c.inc().should.throwSomething;
+	bool t;
+	try {
+    	Counter c = new Counter("test", "counter w/ a label", ["domain"]);
+		c.inc();
+	} catch(Exception e) {
+		t = true;
+	}
+	assert(t, "Should have thrown");
 }
 
 unittest
@@ -132,15 +137,12 @@ unittest
 
     MetricSnapshot shot = c.collect;
 
-    immutable ubyte[] data = shot.encode(EncodingFormat.text);
+    string data = shot.encode(EncodingFormat.text);
 
-    `\\\`.writeln;
-    (cast(string)data).writeln;
-    "///".writeln;
+    assert(data.indexOf("test 5") != -1, data);
 }
 
-unittest
-{
+unittest {
     Counter c = new Counter("test", "counter snapshot w/ labels", ["domain"]);
     c.inc(1, ["domain.com"]);
     c.inc(2, ["domain.org"]);
@@ -148,9 +150,9 @@ unittest
 
     MetricSnapshot shot = c.collect;
 
-    immutable ubyte[] data = shot.encode(EncodingFormat.text);
+    string data = shot.encode(EncodingFormat.text);
 
-    `\\\`.writeln;
-    (cast(string)data).writeln;
-    "///".writeln;
+    assert(data.indexOf(`test{domain="domain.com"} 1`) != -1, data);
+    assert(data.indexOf(`test{domain="domain.org"} 2`) != -1, data);
+    assert(data.indexOf(`test{domain="domain.net"} 10`) != -1, data);
 }

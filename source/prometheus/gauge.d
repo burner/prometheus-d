@@ -7,14 +7,11 @@ import std.exception : enforce;
 import std.format : format;
 import std.range : empty;
 
-
-version(PrometheusUnittest)
-    import fluent.asserts;
-
 @safe:
 
 class Gauge : Metric
 {
+@safe:
     private double[string[]] values;
 
     this(string name, string help, string[] labels)
@@ -69,23 +66,24 @@ class Gauge : Metric
 unittest
 {
     auto g = new Gauge("test", "testing", null);
-    g.values[(string[]).init.idup].should.equal(0);
+    assert(g.values[(string[]).init.idup] == 0);
 
     g.inc;
-    g.values[(string[]).init.idup].should.equal(1);
+    assert(g.values[(string[]).init.idup] == 1);
 
     g.set(35);
-    g.values[(string[]).init.idup].should.equal(35);
+    assert(g.values[(string[]).init.idup] == 35);
 
     g.observe(2, null);
-    g.values[(string[]).init.idup].should.equal(37);
+    assert(g.values[(string[]).init.idup] == 37);
 
     g.set(0);
-    g.values[(string[]).init.idup].should.equal(0);
+    assert(g.values[(string[]).init.idup] == 0);
 }
 
 private class GaugeSnapshot : MetricSnapshot
 {
+@safe:
     string name;
     string help;
     string[] labels;
@@ -103,7 +101,7 @@ private class GaugeSnapshot : MetricSnapshot
         this.timestamp = Metric.posixTime;
     }
 
-    override immutable(ubyte[]) encode(EncodingFormat fmt = EncodingFormat.text)
+    override string encode(EncodingFormat fmt = EncodingFormat.text)
     {
         enforce(fmt == EncodingFormat.text, "Unsupported encoding type");
 
@@ -124,6 +122,6 @@ private class GaugeSnapshot : MetricSnapshot
                 this.timestamp);
 		}
 
-        return cast(immutable ubyte[])output;
+        return output;
     }
 }

@@ -54,5 +54,5 @@ enum EncodingFormat
 
 abstract class MetricSnapshot
 {
-    immutable(ubyte[]) encode(EncodingFormat fmt = EncodingFormat.text);
+    string encode(EncodingFormat fmt = EncodingFormat.text);
 }

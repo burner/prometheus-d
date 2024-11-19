@@ -7,13 +7,11 @@ import std.math : isInfinity, isNaN, sgn;
 import std.range : zip;
 import std.string : replace, strip, stripRight;
 
-version(PrometheusUnittest)
-    import fluent.asserts;
-
 @safe:
 
 class TextEncoding
 {
+@safe:
     alias encodeKey = pipe!(
         (string s) { return replace(s, `\`, `\\`); },
         (string s) { return replace(s, "\n", `\n`); },
@@ -47,22 +45,6 @@ class TextEncoding
         return "%f".format(value).strip("0").stripRight(".");
     }
 
-    unittest
-    {
-        //usual cases
-        encodeNumber(0.0).should.equal("0");
-        encodeNumber(1.0).should.equal("1");
-        encodeNumber(1.1).should.equal("1.1");
-        encodeNumber(-1.1).should.equal("-1.1");
-        encodeNumber(1000000000.1234).should.equal("1000000000.1234");
-        encodeNumber(-00000000.12348).should.equal("-0.12348");
-
-        //unusual cases
-        encodeNumber(float.infinity).should.equal("+Inf");
-        encodeNumber(-float.infinity).should.equal("-Inf");
-        encodeNumber(float.nan).should.equal("Nan");
-    }
-
     static string encodeLabels(const string[] labels, const string[] labelValues)
     {
         if(labels is null || labels.length < 1) {
@@ -77,12 +59,6 @@ class TextEncoding
         }
     }
 
-    unittest
-    {
-        encodeLabels([], []).should.equal("");
-        encodeLabels(["a"], ["b"]).should.equal("{a=\"b\"}");
-    }
-
     static string encodeMetricLine(const string name, const string[] labels, const string[] labelValues, double value, long timestamp)
     {
         return "%s%s %s %d\n".format(
@@ -92,11 +68,33 @@ class TextEncoding
             timestamp
         );
     }
+}
 
-    unittest
-    {
-        encodeMetricLine("test", [], [], 0.0, 0).should.equal("test 0 0\n");
-        encodeMetricLine("test", [], [], 1.0, 0).should.equal("test 1 0\n");
-        encodeMetricLine("test", ["a"], ["b"], 0.0, 0).should.equal("test{a=\"b\"} 0 0\n");
-    }
+unittest
+{
+    //usual cases
+    assert(TextEncoding.encodeNumber(0.0) == "0");
+    assert(TextEncoding.encodeNumber(1.0) == "1");
+    assert(TextEncoding.encodeNumber(1.1) == "1.1");
+    assert(TextEncoding.encodeNumber(-1.1) == "-1.1");
+    assert(TextEncoding.encodeNumber(1000000000.1234) == "1000000000.1234");
+    assert(TextEncoding.encodeNumber(-00000000.12348) == "-0.12348");
+
+    //unusual cases
+    assert(TextEncoding.encodeNumber(float.infinity) == "+Inf");
+    assert(TextEncoding.encodeNumber(-float.infinity) == "-Inf");
+    assert(TextEncoding.encodeNumber(float.nan) == "Nan");
+}
+
+unittest
+{
+    assert(TextEncoding.encodeMetricLine("test", [], [], 0.0, 0) == "test 0 0\n");
+    assert(TextEncoding.encodeMetricLine("test", [], [], 1.0, 0) == "test 1 0\n");
+    assert(TextEncoding.encodeMetricLine("test", ["a"], ["b"], 0.0, 0) == "test{a=\"b\"} 0 0\n");
+}
+
+unittest
+{
+    assert(TextEncoding.encodeLabels([], []) == "");
+    assert(TextEncoding.encodeLabels(["a"], ["b"]) == "{a=\"b\"}");
 }
