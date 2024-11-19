@@ -13,7 +13,7 @@
             "sourcePaths": ["vibe"],
             "importPaths": ["vibe"],
             "dependencies": {
-                "prometheus": "*",
+                "prometheus2": "*",
                 "vibe-d": "~>0.10.1"
             }
         }
