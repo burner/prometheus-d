@@ -1,8 +1,12 @@
 module prometheus.gauge;
 
 import prometheus.metric;
+import prometheus.encoding;
 
 import std.exception : enforce;
+import std.format : format;
+import std.range : empty;
+
 
 version(PrometheusUnittest)
     import fluent.asserts;
@@ -82,8 +86,6 @@ unittest
 
 private class GaugeSnapshot : MetricSnapshot
 {
-    import prometheus.encoding;
-
     string name;
     string help;
     string[] labels;
@@ -105,25 +107,23 @@ private class GaugeSnapshot : MetricSnapshot
     {
         enforce(fmt == EncodingFormat.text, "Unsupported encoding type");
 
-        import std.array : appender, Appender;
-        import std.format : format;
-        import std.string : empty;
+        string output = "";
 
-        Appender!string output = appender!string;
-
-        if(!this.help.empty)
+        if(!this.help.empty) {
             output ~= TextEncoding.encodeHelp(this.name, this.help);
+		}
 
         output ~= TextEncoding.encodeType(this.name, "gauge");
 
-        foreach(labelValues, value; this.values)
+        foreach(labelValues, value; this.values) {
             output ~= TextEncoding.encodeMetricLine(
                 this.name,
                 this.labels,
                 labelValues,
                 value,
                 this.timestamp);
+		}
 
-        return cast(immutable ubyte[])output.data;
+        return cast(immutable ubyte[])output;
     }
 }

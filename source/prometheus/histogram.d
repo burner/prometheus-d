@@ -6,7 +6,11 @@
 
 module prometheus.histogram;
 
+import std.exception : enforce;
+import std.string : empty;
+
 import prometheus.metric;
+
 
 version(PrometheusUnittest)
     import fluent.asserts;
@@ -31,8 +35,6 @@ class Histogram : Metric
 
     override void observe(double value, string[] labelValues = null)
     {
-        import std.exception : enforce;
-
         enforce(labelValues.length == this.labels.length);
 
         auto indexValue = labelValues.idup;
@@ -71,9 +73,11 @@ unittest
 {
     auto h = new Histogram("test", "test w/ labels", ["verb"], Buckets.linear(0, 1, 2));
 
-    foreach(verb; ["get", "set"])
-        for(int i = -1; i < 5; i++)
+    foreach(verb; ["get", "set"]) {
+        for(int i = -1; i < 5; i++) {
             h.observe(i, [verb]).should.not.throwAnyException;
+		}
+	}
 
     h.collect.encode.should.not.throwAnyException;
 }
@@ -89,8 +93,9 @@ struct HistogramBucket
         this.sum = 0;
         this.parent = parent;
         this.values = new double[this.parent.bucketValues.length + 1];
-        for(int i = 0; i < this.values.length; i++)
+        for(int i = 0; i < this.values.length; i++) {
             this.values[i] = 0;
+		}
     }
 
     void observe(double value)
@@ -99,10 +104,10 @@ struct HistogramBucket
 
         this.values[this.values.length-1]++; // inf bucket
 
-        for(long i = this.values.length - 2; i > -1; i--)
-        {
-            if(value > this.parent.bucketValues[i])
+        for(long i = this.values.length - 2; i > -1; i--) {
+            if(value > this.parent.bucketValues[i]) {
                 break;
+			}
 
             this.values[i]++;
         }
@@ -165,8 +170,6 @@ private class HistogramSnapshot : MetricSnapshot
 {
     import prometheus.encoding;
 
-    import std.array : appender, Appender;
-
     string name;
     string help;
     string[] labels;
@@ -189,23 +192,22 @@ private class HistogramSnapshot : MetricSnapshot
 
     override immutable(ubyte[]) encode(EncodingFormat fmt = EncodingFormat.text)
     {
-        import std.exception : enforce;
-        import std.string : empty;
+        string output = "";
 
-        Appender!string output = appender!string;
-
-        if(!this.help.empty)
+        if(!this.help.empty) {
             output ~= TextEncoding.encodeHelp(this.name, this.help);
+		}
 
         output ~= TextEncoding.encodeType(this.name, "counter");
 
-        foreach(labelValues, value; this.buckets)
+        foreach(labelValues, value; this.buckets) {
             this.writeBucket(output, labelValues, value);
+		}
 
-        return cast(immutable ubyte[])output.data;
+        return cast(immutable ubyte[])output;
     }
 
-    private void writeBucket(ref Appender!string output, const ref string[] labelValues, const ref HistogramBucket bucket)
+    private void writeBucket(ref string output, const ref string[] labelValues, const ref HistogramBucket bucket)
     {
         for(int i = 0; i < bucket.values.length; i++)
         {
@@ -232,8 +234,7 @@ private class HistogramSnapshot : MetricSnapshot
             this.timestamp);
     }
 
-    private string bucketValueString(int idx)
-    {
+    private string bucketValueString(int idx) {
         return TextEncoding.encodeNumber(
             idx < this.bucketValues.length ?
                 this.bucketValues[idx] :

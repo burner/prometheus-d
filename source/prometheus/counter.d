@@ -7,8 +7,13 @@
 module prometheus.counter;
 
 import prometheus.metric;
+import prometheus.encoding;
 
+import std.conv : to;
 import std.exception : enforce;
+import std.math : fmax;
+import std.stdio : writeln;
+import std.range : empty;
 
 version(PrometheusUnittest)
     import fluent.asserts;
@@ -26,8 +31,9 @@ class Counter : Metric
         this.labels = labels.dup;
 
         //if there are no labels, then the value defaults to zero.
-        if(labels is null || labels.length == 0)
+        if(labels is null || labels.length == 0) {
             this.values[(string[]).init.idup] = 0;
+		}
     }
 
     void inc(double value = 1, string[] labels = [])
@@ -37,8 +43,6 @@ class Counter : Metric
 
     override void observe(double value, string[] labelValues)
     {
-        import std.math : fmax;
-
         enforce(this.labels.length == labelValues.length);
 
         //counter is monotonically increasing
@@ -65,8 +69,6 @@ unittest
 
 private class CounterSnapshot : MetricSnapshot
 {
-    import prometheus.encoding;
-
     string name;
     string help;
     string[] labels;
@@ -84,29 +86,28 @@ private class CounterSnapshot : MetricSnapshot
         this.timestamp = Metric.posixTime;
     }
 
-    override immutable(ubyte[])  encode(EncodingFormat fmt = EncodingFormat.text)
+    override immutable(ubyte[]) encode(EncodingFormat fmt = EncodingFormat.text)
     {
         enforce(fmt == EncodingFormat.text, "Unsupported encoding type");
 
-        import std.array : appender, Appender;
-        import std.string : empty;
+        string output = "";
 
-        Appender!string output = appender!string;
-
-        if(!this.help.empty)
+        if(!this.help.empty) {
             output ~= TextEncoding.encodeHelp(this.name, this.help);
+		}
 
         output ~= TextEncoding.encodeType(this.name, "counter");
 
-        foreach(labelValues, value; this.values)
+        foreach(labelValues, value; this.values) {
             output ~= TextEncoding.encodeMetricLine(
                 this.name,
                 this.labels,
                 labelValues,
                 value,
                 this.timestamp);
+		}
 
-        return cast(immutable ubyte[])output.data;
+        return cast(immutable ubyte[])output;
     }
 }
 
@@ -124,9 +125,6 @@ unittest
 
 unittest
 {
-    import std.conv : to;
-    import std.stdio : writeln;
-
     Counter c = new Counter("test", "counter snapshot w/ no labels", []);
     c.inc();
     c.inc();
@@ -143,9 +141,6 @@ unittest
 
 unittest
 {
-    import std.conv : to;
-    import std.stdio : writeln;
-
     Counter c = new Counter("test", "counter snapshot w/ labels", ["domain"]);
     c.inc(1, ["domain.com"]);
     c.inc(2, ["domain.org"]);

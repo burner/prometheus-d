@@ -1,5 +1,8 @@
 module prometheus.registry;
 
+import std.array : array;
+import std.concurrency : initOnce;
+
 import prometheus.metric;
 
 version (unittest) import fluent.asserts;
@@ -12,8 +15,6 @@ class Registry
 
     static Registry global() @system
     {
-        import std.concurrency : initOnce;
-
         return initOnce!instance(new Registry);
     }
 
@@ -41,7 +42,6 @@ class Registry
 
     @property Metric[] metrics()
     {
-        import std.array : array;
 
         return this._metrics.byValue.array;
     }

@@ -1,7 +1,11 @@
 module prometheus.encoding;
 
+import std.algorithm.iteration : map;
 import std.format : format;
 import std.functional : pipe;
+import std.math : isInfinity, isNaN, sgn;
+import std.range : zip;
+import std.string : replace, strip, stripRight;
 
 version(PrometheusUnittest)
     import fluent.asserts;
@@ -10,8 +14,6 @@ version(PrometheusUnittest)
 
 class TextEncoding
 {
-    import std.string : replace;
-
     alias encodeKey = pipe!(
         (string s) { return replace(s, `\`, `\\`); },
         (string s) { return replace(s, "\n", `\n`); },
@@ -34,16 +36,13 @@ class TextEncoding
 
     static string encodeNumber(double value)
     {
-        import std.format : format;
-        import std.math : isInfinity, isNaN, sgn;
-        import std.string : strip, stripRight;
-
-        if(value == 0)
+        if(value == 0) {
             return "0";
-        if(value.isNaN)
+		} else if(value.isNaN) {
             return "Nan";
-        if(value.isInfinity)
+		} else if(value.isInfinity) {
             return value.sgn > 0 ? "+Inf" : "-Inf";
+		}
 
         return "%f".format(value).strip("0").stripRight(".");
     }
@@ -66,14 +65,9 @@ class TextEncoding
 
     static string encodeLabels(const string[] labels, const string[] labelValues)
     {
-        if(labels is null || labels.length < 1)
+        if(labels is null || labels.length < 1) {
             return "";
-        else
-        {
-            import std.algorithm.iteration : map;
-            import std.format : format;
-            import std.range : zip;
-
+		} else {
             return "{%-(%s,%)}".format(zip(labels, labelValues).
                 map!(t => "%s=\"%s\"".format(
                     TextEncoding.encodeKey(t[0]),
@@ -91,8 +85,6 @@ class TextEncoding
 
     static string encodeMetricLine(const string name, const string[] labels, const string[] labelValues, double value, long timestamp)
     {
-        import std.format : format;
-
         return "%s%s %s %d\n".format(
             encodeKey(name),
             encodeLabels(labels, labelValues),

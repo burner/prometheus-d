@@ -6,6 +6,9 @@
 
 module prometheus.metric;
 
+import core.time : convert;
+import std.datetime : Clock, DateTime, SysTime, UTC;
+
 import prometheus.registry;
 
 @safe:
@@ -34,9 +37,6 @@ abstract class Metric
     /// I hate this hack, but it's what I have
     final static long posixTime()
     {
-        import core.time : convert;
-        import std.datetime : Clock, DateTime, SysTime, UTC;
-
         enum posixEpochAsStd = SysTime(
             DateTime(1970, 1, 1, 0, 0, 0),
             UTC()
@@ -55,8 +55,4 @@ enum EncodingFormat
 abstract class MetricSnapshot
 {
     immutable(ubyte[]) encode(EncodingFormat fmt = EncodingFormat.text);
-}
-
-class EncodeTextUtils
-{
 }
