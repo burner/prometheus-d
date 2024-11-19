@@ -7,16 +7,20 @@
 module prometheus.counter;
 
 import prometheus.metric;
+import prometheus.encoding;
 
+import std.conv : to;
 import std.exception : enforce;
-
-version(PrometheusUnittest)
-    import fluent.asserts;
+import std.math : fmax;
+import std.stdio : writeln;
+import std.range : empty;
+import std.string : indexOf;
 
 @safe:
 
 class Counter : Metric
 {
+@safe:
     private double[string[]] values;
 
     this(string name, string help, string[] labels)
@@ -26,8 +30,9 @@ class Counter : Metric
         this.labels = labels.dup;
 
         //if there are no labels, then the value defaults to zero.
-        if(labels is null || labels.length == 0)
+        if(labels is null || labels.length == 0) {
             this.values[(string[]).init.idup] = 0;
+		}
     }
 
     void inc(double value = 1, string[] labels = [])
@@ -37,8 +42,6 @@ class Counter : Metric
 
     override void observe(double value, string[] labelValues)
     {
-        import std.math : fmax;
-
         enforce(this.labels.length == labelValues.length);
 
         //counter is monotonically increasing
@@ -65,8 +68,7 @@ unittest
 
 private class CounterSnapshot : MetricSnapshot
 {
-    import prometheus.encoding;
-
+@safe:
     string name;
     string help;
     string[] labels;
@@ -84,49 +86,50 @@ private class CounterSnapshot : MetricSnapshot
         this.timestamp = Metric.posixTime;
     }
 
-    override immutable(ubyte[])  encode(EncodingFormat fmt = EncodingFormat.text)
+    override string encode(EncodingFormat fmt = EncodingFormat.text)
     {
         enforce(fmt == EncodingFormat.text, "Unsupported encoding type");
 
-        import std.array : appender, Appender;
-        import std.string : empty;
+        string output = "";
 
-        Appender!string output = appender!string;
-
-        if(!this.help.empty)
+        if(!this.help.empty) {
             output ~= TextEncoding.encodeHelp(this.name, this.help);
+		}
 
         output ~= TextEncoding.encodeType(this.name, "counter");
 
-        foreach(labelValues, value; this.values)
+        foreach(labelValues, value; this.values) {
             output ~= TextEncoding.encodeMetricLine(
                 this.name,
                 this.labels,
                 labelValues,
                 value,
                 this.timestamp);
+		}
 
-        return cast(immutable ubyte[])output.data;
+        return output;
     }
 }
 
 unittest
 {
     Counter c = new Counter("test", "counter w/ no labels", []);
-    c.inc().should.not.throwAnyException;
 }
 
 unittest
 {
-    Counter c = new Counter("test", "counter w/ a label", ["domain"]);
-    c.inc().should.throwSomething;
+	bool t;
+	try {
+    	Counter c = new Counter("test", "counter w/ a label", ["domain"]);
+		c.inc();
+	} catch(Exception e) {
+		t = true;
+	}
+	assert(t, "Should have thrown");
 }
 
 unittest
 {
-    import std.conv : to;
-    import std.stdio : writeln;
-
     Counter c = new Counter("test", "counter snapshot w/ no labels", []);
     c.inc();
     c.inc();
@@ -134,18 +137,12 @@ unittest
 
     MetricSnapshot shot = c.collect;
 
-    immutable ubyte[] data = shot.encode(EncodingFormat.text);
+    string data = shot.encode(EncodingFormat.text);
 
-    `\\\`.writeln;
-    (cast(string)data).writeln;
-    "///".writeln;
+    assert(data.indexOf("test 5") != -1, data);
 }
 
-unittest
-{
-    import std.conv : to;
-    import std.stdio : writeln;
-
+unittest {
     Counter c = new Counter("test", "counter snapshot w/ labels", ["domain"]);
     c.inc(1, ["domain.com"]);
     c.inc(2, ["domain.org"]);
@@ -153,9 +150,9 @@ unittest
 
     MetricSnapshot shot = c.collect;
 
-    immutable ubyte[] data = shot.encode(EncodingFormat.text);
+    string data = shot.encode(EncodingFormat.text);
 
-    `\\\`.writeln;
-    (cast(string)data).writeln;
-    "///".writeln;
+    assert(data.indexOf(`test{domain="domain.com"} 1`) != -1, data);
+    assert(data.indexOf(`test{domain="domain.org"} 2`) != -1, data);
+    assert(data.indexOf(`test{domain="domain.net"} 10`) != -1, data);
 }

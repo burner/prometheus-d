@@ -1,10 +1,10 @@
 {
-    "name": "prometheus",
+    "name": "prometheus2",
     "authors": [
-        "Andrew Benton"
+        "Andrew Benton",
+		"Robert burner Schadek"
     ],
-    "description": "Prometheus collectors and metrics",
-    "copyright": "Copyright © 2018, Andrew Benton",
+    "description": "Prometheus collectors and metrics ... modernized",
     "license": "MPL-2.0",
     "subPackages": [
         {
@@ -14,7 +14,7 @@
             "importPaths": ["vibe"],
             "dependencies": {
                 "prometheus": "*",
-                "vibe-d": ">=0.8.4"
+                "vibe-d": "~>0.10.1"
             }
         }
     ],
@@ -25,13 +25,9 @@
         {
             "name": "unittest",
             "dependencies": {
-                "fluent-asserts": "~>0.12.4",
                 "vibe-d:tls": "*"
             },
-            "versions": ["PrometheusUnittest"],
-            "subConfigurations": {
-                "vibe-d:tls": "openssl-1.1"
-            }
+            "versions": ["PrometheusUnittest"]
         }
     ]
 }

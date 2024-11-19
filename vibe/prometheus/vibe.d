@@ -11,17 +11,19 @@ import prometheus.registry;
 
 import vibe.http.server;
 
+@safe:
 void delegate(HTTPServerRequest, HTTPServerResponse) handleMetrics(Registry reg)
 {
-    return (HTTPServerRequest, HTTPServerResponse res) {
-        ubyte[] data = new ubyte[0];
+    return (HTTPServerRequest, HTTPServerResponse res) @safe {
+        string data;
+
+        res.contentType = "text/plain";
+		auto bw = res.bodyWriter();
 
         foreach(m; reg.metrics)
         {
-            data ~= m.collect().encode(EncodingFormat.text);
-            data ~= "\n";
+            bw.write(m.collect().encode(EncodingFormat.text));
+            bw.write("\n");
         }
-
-        res.writeBody(data, "text/plain");
     };
 }

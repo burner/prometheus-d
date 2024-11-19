@@ -10,11 +10,8 @@
         "prometheus:vibe": {
             "path": "../../"
         },
-        "vibe-d": ">=0.8.4",
+        "vibe-d": ">=0.10.1",
         "vibe-d:tls": "*"
-    },
-    "subConfigurations": {
-        "vibe-d:tls": "openssl-1.1"
     },
     "description": "Vibe.d sample for prometheus.",
     "copyright": "Copyright © 2018, Andrew Benton",

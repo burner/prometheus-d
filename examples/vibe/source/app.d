@@ -3,6 +3,11 @@ import prometheus.gauge;
 import prometheus.registry;
 import prometheus.vibe;
 
+import core.memory : GC;
+import core.thread : Thread;
+
+import std.datetime : seconds;
+
 import vibe.d;
 
 void main()
@@ -19,10 +24,7 @@ void main()
     Gauge gr = new Gauge("memory_reserve", null, null);
     gr.register;
 
-    import core.thread : Thread;
     Thread t = new Thread(() {
-        import std.datetime : seconds;
-        import core.memory : GC;
 
         while(true)
         {
@@ -42,7 +44,7 @@ void main()
         c.inc;
     });
     router.get("/", (HTTPServerRequest req, HTTPServerResponse res) {
-        res.writeBody(cast(ubyte[])"hello, world!", "text/plain");
+        res.writeBody("hello, world!");
     });
     router.get("/metrics", handleMetrics(Registry.global));
 

@@ -1,4 +1,4 @@
-Prometheus for D
+Prometheus2 for D
 ================
 
 This library helps you expose your metrics in a [Prometheus][prometheus] compatible format.  The core library has no external dependencies which makes it easy to integrate with other solutions.
@@ -49,9 +49,7 @@ TODO
 - [ ] Summary
 - [ ] Default Dlang metrics (GC, etc...)
 - [x] [Vibe.d][vibe] integration
-- [ ] [Hunt][hunt] integration
 
 
 [prometheus]: https://prometheus.io/
 [vibe]: https://github.com/vibe-d/vibe.d
-[hunt]: https://github.com/huntlabs/hunt
