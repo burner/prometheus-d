@@ -18,13 +18,11 @@ import std.string : indexOf;
 
 @safe:
 
-class Counter : Metric
-{
+class Counter : Metric {
 @safe:
     private double[string[]] values;
 
-    this(string name, string help, string[] labels)
-    {
+    this(string name, string help, string[] labels) {
         this.name = name;
         this.help = help;
         this.labels = labels.dup;
@@ -35,39 +33,35 @@ class Counter : Metric
 		}
     }
 
-    void inc(double value = 1, string[] labels = [])
-    {
+    void inc(double value = 1, string[] labels = []) {
         this.observe(value, labels);
     }
 
-    override void observe(double value, string[] labelValues)
-    {
+    override void observe(double value, string[] labelValues) {
         enforce(this.labels.length == labelValues.length);
 
         //counter is monotonically increasing
         value = fmax(value, 0);
 
-        if(labelValues in this.values)
+        if(labelValues in this.values) {
             this.values[labelValues.idup] += value;
-        else
+		} else {
             this.values[labelValues.idup] = value;
+		}
     }
 
-    override MetricSnapshot collect()
-    {
+    override MetricSnapshot collect() {
         return new CounterSnapshot(this);
     }
 }
 
-unittest
-{
+unittest {
     Counter c = new Counter("test", "testing counter w/ no labels", []);
     c.inc();
     c.observe(1, []);
 }
 
-private class CounterSnapshot : MetricSnapshot
-{
+private class CounterSnapshot : MetricSnapshot {
 @safe:
     string name;
     string help;
@@ -75,19 +69,18 @@ private class CounterSnapshot : MetricSnapshot
     double[string[]] values;
     long timestamp;
 
-    this(Counter c)
-    {
+    this(Counter c) {
         this.name = c.name;
         this.help = c.help;
         this.labels = c.labels;
-        foreach(k, v; c.values)
+        foreach(k, v; c.values) {
             this.values[k.idup] = v;
+		}
 
         this.timestamp = Metric.posixTime;
     }
 
-    override string encode(EncodingFormat fmt = EncodingFormat.text)
-    {
+    override string encode(EncodingFormat fmt = EncodingFormat.text) {
         enforce(fmt == EncodingFormat.text, "Unsupported encoding type");
 
         string output = "";
@@ -111,13 +104,11 @@ private class CounterSnapshot : MetricSnapshot
     }
 }
 
-unittest
-{
+unittest {
     Counter c = new Counter("test", "counter w/ no labels", []);
 }
 
-unittest
-{
+unittest {
 	bool t;
 	try {
     	Counter c = new Counter("test", "counter w/ a label", ["domain"]);
@@ -128,8 +119,7 @@ unittest
 	assert(t, "Should have thrown");
 }
 
-unittest
-{
+unittest {
     Counter c = new Counter("test", "counter snapshot w/ no labels", []);
     c.inc();
     c.inc();

@@ -17,14 +17,12 @@ import prometheus.encoding;
 
 @safe:
 
-class Histogram : Metric
-{
+class Histogram : Metric {
 @safe:
     private double[] bucketValues;
     private HistogramBucket[string[]] buckets;
 
-    this(string name, string help, string[] labels, double[] buckets)
-    {
+    this(string name, string help, string[] labels, double[] buckets) {
         this.name = name;
         this.help = help;
         this.labels = labels.dup;
@@ -34,27 +32,25 @@ class Histogram : Metric
             this.buckets[(string[]).init.idup] = HistogramBucket(this);
     }
 
-    override void observe(double value, string[] labelValues = null)
-    {
+    override void observe(double value, string[] labelValues = null) {
         enforce(labelValues.length == this.labels.length);
 
         auto indexValue = labelValues.idup;
 
-        if(!(labelValues in this.buckets))
+        if(labelValues !in this.buckets) {
             this.buckets[indexValue] = HistogramBucket(this);
+		}
 
         this.buckets[indexValue].observe(value);
     }
 
-    override MetricSnapshot collect()
-    {
+    override MetricSnapshot collect() {
         return new HistogramSnapshot(this);
     }
 }
 
 //test lifecycle w/ no labels
-unittest
-{
+unittest {
     auto h = new Histogram("test", "testing description", null, Buckets.linear(0, 1, 5));
 
 	// should not throw
@@ -71,8 +67,7 @@ unittest
 }
 
 //test lifecycle w/ labels
-unittest
-{
+unittest {
     auto h = new Histogram("test", "test w/ labels", ["verb"], Buckets.linear(0, 1, 2));
 
     foreach(verb; ["get", "set"]) {
@@ -84,15 +79,13 @@ unittest
     h.collect.encode();
 }
 
-struct HistogramBucket
-{
+struct HistogramBucket {
 @safe:
     private Histogram parent;
     private double[] values;
     private double sum;
 
-    this(Histogram parent)
-    {
+    this(Histogram parent) {
         this.sum = 0;
         this.parent = parent;
         this.values = new double[this.parent.bucketValues.length + 1];
@@ -101,8 +94,7 @@ struct HistogramBucket
 		}
     }
 
-    void observe(double value)
-    {
+    void observe(double value) {
         this.sum += value;
 
         this.values[this.values.length-1]++; // inf bucket
@@ -116,8 +108,7 @@ struct HistogramBucket
         }
     }
 
-    HistogramBucket dup()
-    {
+    HistogramBucket dup() {
         auto ret = HistogramBucket(this.parent);
         ret.sum = this.sum;
         ret.values = this.values.dup;
@@ -125,24 +116,19 @@ struct HistogramBucket
     }
 }
 
-final class Buckets
-{
+final class Buckets {
 @safe:
-    static double[] linear(double start, double width, long count)
-    {
+    static double[] linear(double start, double width, long count) {
         double[] ret = new double[count-1];
-        for(int i = 0; i < count - 1; i++)
-        {
+        for(int i = 0; i < count - 1; i++) {
             ret[i] = start + (width * i);
         }
         return ret;
     }
 
-    static double[] exponential(double start, double factor, long count)
-    {
+    static double[] exponential(double start, double factor, long count) {
         double[] ret = new double[count-1];
-        for(int i = 0; i < count - 1; i++)
-        {
+        for(int i = 0; i < count - 1; i++) {
             ret[i] = start * pow(factor, i);
         }
         return ret;
@@ -150,8 +136,7 @@ final class Buckets
 }
 
 //test linear
-unittest
-{
+unittest {
 	{
 		auto lin1 = Buckets.linear(0, 1, 4);
 		assert(lin1.length == 3, to!(string)(lin1.length));
@@ -167,8 +152,7 @@ unittest
 
 //test exponential
 
-private class HistogramSnapshot : MetricSnapshot
-{
+private class HistogramSnapshot : MetricSnapshot {
 @safe:
     string name;
     string help;
@@ -177,21 +161,20 @@ private class HistogramSnapshot : MetricSnapshot
     HistogramBucket[string[]] buckets;
     long timestamp;
 
-    this(Histogram h)
-    {
+    this(Histogram h) {
         this.name = h.name;
         this.help = h.help;
         this.labels = h.labels;
         this.bucketValues = h.bucketValues;
 
-        foreach(k, v; h.buckets)
+        foreach(k, v; h.buckets) {
             this.buckets[k] = v.dup;
+		}
 
         this.timestamp = Metric.posixTime;
     }
 
-    override string encode(EncodingFormat fmt = EncodingFormat.text)
-    {
+    override string encode(EncodingFormat fmt = EncodingFormat.text) {
         string output = "";
 
         if(!this.help.empty) {
@@ -207,10 +190,10 @@ private class HistogramSnapshot : MetricSnapshot
         return output;
     }
 
-    private void writeBucket(ref string output, const ref string[] labelValues, const ref HistogramBucket bucket)
+    private void writeBucket(ref string output, const ref string[] labelValues
+		, const ref HistogramBucket bucket)
     {
-        for(int i = 0; i < bucket.values.length; i++)
-        {
+        for(int i = 0; i < bucket.values.length; i++) {
             output ~= TextEncoding.encodeMetricLine(
                 this.name ~ "_bucket",
                 this.labels ~ "le",

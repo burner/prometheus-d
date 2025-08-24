@@ -7,47 +7,37 @@ import prometheus.metric;
 
 @safe:
 
-class Registry
-{
+class Registry {
 @safe:
     private __gshared Registry instance;
 
-    static Registry global() @system
-    {
+    static Registry global() @system {
         return initOnce!instance(new Registry);
     }
 
     private Metric[Metric] _metrics;
 
-    this()
-    {
+    this() {
     }
 
-    void register(Metric m)
-    {
-        synchronized (this)
-        {
+    void register(Metric m) {
+        synchronized (this) {
             this._metrics[m] = m;
         }
     }
 
-    void unregister(Metric m)
-    {
-        synchronized (this)
-        {
+    void unregister(Metric m) {
+        synchronized (this) {
             this._metrics.remove(m);
         }
     }
 
-    @property Metric[] metrics()
-    {
-
+    @property Metric[] metrics() {
         return this._metrics.byValue.array;
     }
 }
 
-@system unittest
-{
+@system unittest {
     // given
     alias UnderTest = Registry;
 
@@ -58,8 +48,7 @@ class Registry
 	assert(registry !is null);
 }
 
-@system unittest
-{
+@system unittest {
     // given
     alias UnderTest = Registry;
     auto registry1 = UnderTest.global;

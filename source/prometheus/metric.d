@@ -13,8 +13,7 @@ import prometheus.registry;
 
 @safe:
 
-abstract class Metric
-{
+abstract class Metric {
     string name;
     string help;
     string[] labels;
@@ -23,20 +22,17 @@ abstract class Metric
 
     MetricSnapshot collect();
 
-    Metric register() @system
-    {
+    Metric register() @system {
         return this.register(Registry.global);
     }
 
-    Metric register(Registry reg)
-    {
+    Metric register(Registry reg) {
         reg.register(this);
         return this;
     }
 
     /// I hate this hack, but it's what I have
-    final static long posixTime()
-    {
+    final static long posixTime() {
         enum posixEpochAsStd = SysTime(
             DateTime(1970, 1, 1, 0, 0, 0),
             UTC()
@@ -46,13 +42,11 @@ abstract class Metric
     }
 }
 
-enum EncodingFormat
-{
+enum EncodingFormat {
     text,
     proto
 }
 
-abstract class MetricSnapshot
-{
+abstract class MetricSnapshot {
     string encode(EncodingFormat fmt = EncodingFormat.text);
 }
